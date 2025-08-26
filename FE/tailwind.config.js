@@ -6,14 +6,17 @@ export const content = [
 ];
 export const theme = {
   extend: {
-     colors: {
-        primary: {
-          300: '#7DCAEB',
-          400: '#4FB8E5',
-          500: '#22A6DF',
-          600: '#1E90C2', 
-        },
+    colors: {
+      primary: {
+        50: '#E6F7FC',
+        100: '#CDEFFD',
+        200: '#A3E3F7',
+        300: '#7DCAEB',
+        400: '#4FB8E5',
+        500: '#22A6DF',
+        600: '#1E90C2',
       },
+    },
   },
 };
 export const plugins = [];

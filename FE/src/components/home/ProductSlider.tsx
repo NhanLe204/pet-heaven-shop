@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import Loader from "../loading/loader";
 
 interface Product {
   _id: string;
@@ -16,29 +17,19 @@ interface Product {
   quantity: number;
 }
 
-const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, data }) => {
+interface ProductSliderProps {
+  title: string;
+  data: Product[];
+  loading?: boolean; // Thêm prop loading
+}
+
+const ProductSlider: React.FC<ProductSliderProps> = ({ title, data, loading = false }) => {
   const sliderRef = useRef<any>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleBuyNow = (product: Product) => {
-    const quantity = 1;
-    const stockQuantity = product.quantity || Infinity;
-
-    if (quantity > stockQuantity) {
-      alert(`Sản phẩm ${product.name} đã hết hàng!`);
-      return;
-    }
-
-    const item = {
-      id: product._id,
-      name: product.name,
-      price: Number(product.price * (1 - product.discount / 100)),
-      image: product.image_url[0] || "/placeholder-image.jpg",
-      stockQuantity: product.quantity || 0,
-    };
-
-    navigate("/checkout");
+    navigate(`/detail/${product._id}`);
   };
 
   const handlePrevSlide = () => {
@@ -50,7 +41,7 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
   };
 
   useEffect(() => {
-    const handleResize = () => {};
+    const handleResize = () => { };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -80,6 +71,32 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
     ],
   };
 
+  // Hiển thị Loader khi loading là true
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative ml-[15px] w-[200px] rounded-t-lg border-l border-r border-t border-primary-500 px-2 py-2 sm:ml-[30px] sm:w-[250px] sm:px-4 md:w-[300px]">
+            <div className="absolute z-10 px-2 bg-white -top-7 left-3">
+              <img
+                src="/images/icons/paw.png"
+                alt="Paw Icon"
+                className="h-8 w-8 sm:h-12 sm:w-12 md:h-[50px] md:w-[50px]"
+              />
+            </div>
+            <h2 className="relative z-20 text-base font-semibold text-center sm:text-lg">
+              {title.toUpperCase()}
+            </h2>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-60">
+          <Loader />
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu không có dữ liệu và không loading, trả về null
   if (!data || data.length === 0) {
     return null;
   }
@@ -87,18 +104,20 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <div className="relative ml-[15px] w-[200px] rounded-t-lg border-l border-r border-t border-[#1890ff] px-2 py-2 sm:ml-[30px] sm:w-[250px] sm:px-4 md:w-[300px]">
-          <div className="absolute z-10 px-2 bg-white -top-7 left-3">
+        <div className="relative px-6 py-2 border rounded-t-lg w-fit border-primary-200">
+          <div className="absolute px-2 bg-white -top-8 left-4">
             <img
               src="/images/icons/paw.png"
               alt="Paw Icon"
-              className="h-8 w-8 sm:h-12 sm:w-12 md:h-[50px] md:w-[50px]"
+              className="h-10 w-10 sm:h-12 sm:w-12 md:h-[50px] md:w-[50px]"
             />
           </div>
-          <h2 className="relative z-20 text-base font-semibold text-center sm:text-lg">
+
+          <h2 className="relative z-20 text-lg font-semibold text-left sm:text-xl">
             {title.toUpperCase()}
           </h2>
         </div>
+
       </div>
 
       {/* Products Slider */}
@@ -124,7 +143,7 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
                   </div>
                   <div className="flex items-center justify-between px-4 mt-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-[#1890ff]">
+                      <span className="text-lg font-bold text-primary-500">
                         {new Intl.NumberFormat("vi-VN", {
                           style: "currency",
                           currency: "VND",
@@ -149,7 +168,7 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
                 </div>
                 <div className="flex justify-center mt-4">
                   <button
-                    className="px-6 py-2 font-medium text-white border border-transparent rounded-md bg-[#1890ff] hover:bg-white hover:text-[#1890ff] hover:border-[#1890ff]"
+                    className="px-6 py-2 font-medium text-white border border-transparent rounded-md bg-primary-500 hover:bg-white hover:text-primary-600 hover:border-primary-600"
                     onClick={() => handleBuyNow(product)}
                   >
                     Mua ngay
@@ -163,13 +182,13 @@ const ProductSlider: React.FC<{ title: string; data: Product[] }> = ({ title, da
           className="absolute z-20 p-2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full shadow left-2 top-1/2 hover:bg-gray-100"
           onClick={handlePrevSlide}
         >
-          <FaChevronLeft className="text-[#1890ff]" />
+          <FaChevronLeft className="text-primary-500" />
         </button>
         <button
           className="absolute z-20 p-2 transform -translate-y-1/2 bg-white border border-gray-300 rounded-full shadow right-2 top-1/2 hover:bg-gray-100"
           onClick={handleNextSlide}
         >
-          <FaChevronRight className="text-[#1890ff]" />
+          <FaChevronRight className="text-primary-500" />
         </button>
       </div>
     </div>

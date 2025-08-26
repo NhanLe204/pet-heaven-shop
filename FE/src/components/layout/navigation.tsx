@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Breadcrumb } from "antd";
 import { useLocation, Link, useParams } from "react-router-dom";
 import { Typography } from "antd";
-import productsApi from "../api/productsApi";
-import blogApi from "../api/blogApi";
+import productsApi from "../../api/productsApi";
+import BlogApi from "../../api/blogApi";
 
 const { Title } = Typography;
 
@@ -100,7 +100,7 @@ const Navigation: React.FC = () => {
           setLoading(true);
           setError(null);
           console.log("Fetching blog with ID:", id);
-          const response = await blogApi.getBlogById(id);
+          const response = await BlogApi.getBlogById(id);
           console.log("Blog API response:", response.data);
           // Xử lý trường hợp response.data là mảng hoặc đối tượng
           let blogData;

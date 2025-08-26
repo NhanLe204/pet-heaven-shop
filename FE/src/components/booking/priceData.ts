@@ -23,7 +23,6 @@ export const serviceBathData = [
   { weight: "> 40kg", price: 270000 },
 ];
 
-// Optionally, you can include the calculatePrice function here as well
 export const calculatePrice = (
   serviceName: string,
   petWeight: number,

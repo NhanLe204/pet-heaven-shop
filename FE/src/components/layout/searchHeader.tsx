@@ -6,7 +6,6 @@ import productsApi from "../../api/productsApi";
 import { SearchContext } from "../searchContext";
 import debounce from "lodash/debounce";
 
-// Định nghĩa kiểu dữ liệu
 interface Product {
   _id: string;
   name: string;
@@ -20,6 +19,7 @@ interface SearchComponentProps {
 
 const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) => {
   const { keyword, setKeyword } = useContext(SearchContext);
+  const [searchInput, setSearchInput] = useState(keyword || ""); // Giá trị tạm cho ô input
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchDesktopOpen, setSearchDesktopOpen] = useState(false);
@@ -34,10 +34,12 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
     setSearchDesktopOpen(false);
     if (onSearchDesktopOpen) onSearchDesktopOpen(false);
   };
+  useEffect(() => {
+    setSearchInput(keyword); 
+  }, [keyword]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");
-    console.log("Loaded searchHistory from localStorage on mount:", storedHistory);
     if (storedHistory) {
       try {
         const parsedHistory = JSON.parse(storedHistory);
@@ -55,7 +57,6 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
   }, []);
 
   const saveSearchHistory = (history: string[]) => {
-    console.log("Saving searchHistory to localStorage:", history);
     localStorage.setItem("searchHistory", JSON.stringify(history));
   };
 
@@ -72,27 +73,23 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
     const trimmedValue = value.trim();
     if (trimmedValue) {
       handleSearch(trimmedValue);
-      setKeyword(trimmedValue);
+      setKeyword(trimmedValue); // Chỉ cập nhật keyword khi submit
       navigate(`/search?q=${encodeURIComponent(trimmedValue)}`);
       closeSearchDesktop();
     }
   };
 
-  // Thêm debounce để tối ưu gọi API
+  // Thêm debounce để tối ưu gọi API cho dropdown gợi ý
   const fetchSearchResults = useCallback(
     debounce(async (searchTerm: string) => {
       try {
         const response = await productsApi.getProductActive();
         const data = await response.data.result;
-        console.log("Dữ liệu từ API:", data);
-
         const normalizedSearchTerm = removeDiacritics(searchTerm.toLowerCase());
         const filteredProducts = data.filter((product: Product) => {
           const normalizedProductName = removeDiacritics(product.name.toLowerCase());
           return normalizedProductName.includes(normalizedSearchTerm);
         });
-
-        console.log("Sản phẩm sau lọc:", filteredProducts);
         setSearchResults(filteredProducts);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -104,16 +101,15 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setKeyword(value);
+    setSearchInput(value); // Chỉ cập nhật giá trị tạm
     if (value.trim()) {
-      fetchSearchResults(value);
+      fetchSearchResults(value); // Gọi API cho gợi ý tìm kiếm
     } else {
       setSearchResults([]);
     }
   };
 
   const clearSearchHistory = () => {
-    console.log("Clearing searchHistory");
     setSearchHistory([]);
     localStorage.removeItem("searchHistory");
   };
@@ -127,101 +123,94 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
   };
 
   const searchDesktop = (
-  <div
-    className="w-[500px] bg-white shadow-lg rounded-lg border border-gray-200"
-    style={{
-      position: "absolute",
-      top: "100%",
-      left: 0,
-      zIndex: 1000,
-      maxHeight: "400px",
-      overflowY: "auto",
-    }}
-  >
-    <div className="p-4">
-      {/* Nếu có kết quả tìm kiếm */}
-      {searchResults.length > 0 ? (
-        <div>
-          {searchResults.map((product) => (
-            <div
-              key={product._id}
-              className="flex items-center gap-3 p-2 border-b cursor-pointer hover:bg-gray-100"
-              onClick={() => {
-                navigate(`/detail/${product._id}`);
-                closeSearchDesktop();
-              }}
-            >
-              {/* ảnh nhỏ bên trái */}
-              <img
-                src={product.image_url[0]}
-                alt={product.name}
-                className="object-cover w-12 h-12 rounded"
-              />
-              {/* tên + giá */}
-              <div className="flex-1">
-                <p className="text-sm font-medium line-clamp-2">{product.name}</p>
-                <p className="text-[#22A6DF] font-bold">
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(Number(product.price))}
-                </p>
+    <div
+      className="w-[500px] bg-white shadow-lg rounded-lg border border-gray-200"
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        zIndex: 1000,
+        maxHeight: "400px",
+        overflowY: "auto",
+      }}
+    >
+      <div className="p-4">
+        {searchResults.length > 0 ? (
+          <div>
+            {searchResults.map((product) => (
+              <div
+                key={product._id}
+                className="flex items-center gap-3 p-2 border-b cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  navigate(`/detail/${product._id}`);
+                  closeSearchDesktop();
+                }}
+              >
+                <img
+                  src={product.image_url[0]}
+                  alt={product.name}
+                  className="object-cover w-12 h-12 rounded"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium line-clamp-2">{product.name}</p>
+                  <p className="text-[#22A6DF] font-bold">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(Number(product.price))}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div>
+            {searchHistory.length > 0 && (
+              <div className="mb-4">
+                {searchHistory.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSearchSubmit(item)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaHistory className="text-gray-400" />
+                      <span>{item}</span>
+                    </div>
+                    <FaTimes
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newHistory = searchHistory.filter((_, i) => i !== index);
+                        setSearchHistory(newHistory);
+                        saveSearchHistory(newHistory);
+                      }}
+                      className="text-gray-400 cursor-pointer hover:text-red-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div>
+              <h3 className="mb-2 font-bold text-gray-700">Từ khóa phổ biến</h3>
+              <div className="flex flex-wrap gap-2">
+                {["Thức ăn cho mèo", "Đồ chơi cho mèo", "Tắm cho thú cưng"].map(
+                  (keyword, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSearchSubmit(keyword)}
+                      className="px-3 py-1 text-sm bg-gray-100 rounded-full hover:bg-gray-200"
+                    >
+                      {keyword}
+                    </button>
+                  )
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div>
-          {/* Lịch sử tìm kiếm */}
-          {searchHistory.length > 0 && (
-            <div className="mb-4">
-              {searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSearchSubmit(item)}
-                >
-                  <div className="flex items-center gap-2">
-                    <FaHistory className="text-gray-400" />
-                    <span>{item}</span>
-                  </div>
-                  <FaTimes
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const newHistory = searchHistory.filter((_, i) => i !== index);
-                      setSearchHistory(newHistory);
-                      saveSearchHistory(newHistory);
-                    }}
-                    className="text-gray-400 cursor-pointer hover:text-red-500"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Từ khóa phổ biến */}
-          <div>
-            <h3 className="mb-2 font-bold text-gray-700">Từ khóa phổ biến</h3>
-            <div className="flex flex-wrap gap-2">
-              {["Thức ăn cho mèo", "Đồ chơi cho mèo", "Tắm cho thú cưng"].map(
-                (keyword, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSearchSubmit(keyword)}
-                    className="px-3 py-1 text-sm bg-gray-100 rounded-full hover:bg-gray-200"
-                  >
-                    {keyword}
-                  </button>
-                )
-              )}
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
-
+  );
 
   return (
     <Dropdown
@@ -240,14 +229,14 @@ const SearchHeader: React.FC<SearchComponentProps> = ({ onSearchDesktopOpen }) =
           <input
             type="text"
             placeholder="Tìm kiếm..."
-            value={keyword || ""}
+            value={searchInput} 
             onChange={handleSearchChange}
-            onKeyPress={(e) => e.key === "Enter" && handleSearchSubmit(keyword || "")}
+            onKeyPress={(e) => e.key === "Enter" && handleSearchSubmit(searchInput)}
             onClick={showSearchDesktop}
             className="w-full h-10 p-2 pl-3 text-gray-700 border-none outline-none"
           />
           <button
-            onClick={showSearchDesktop}
+            onClick={() => handleSearchSubmit(searchInput)} 
             className="flex items-center justify-center w-10 h-10 bg-[#22A6DF] text-white"
           >
             <FaSearch />

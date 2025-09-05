@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useContext } from "react";
 import { FaFilter } from "react-icons/fa";
 import { Button, Row, Col, Typography, Select, Drawer, Pagination } from "antd";
-import ListCard from "../../components/listcard";
+import ListCard from "../../components/products/listcard";
 import Loader from "../../components/loader";
-import LeftProductList from "../../components/LeftProductList";
+import LeftProductList from "../../components/products/LeftProductList";
 import productsApi from "../../api/productsApi";
 import categoryApi from "../../api/categoryApi";
 import { SearchContext } from "../../components/searchContext";
@@ -265,7 +265,7 @@ export default function Search() {
     <div className="mx-auto mb-4 mt-4 w-full max-w-full sm:px-3 md:px-7 lg:px-14 xl:px-[154px] bg-[#e8e8e8]/[0.5] py-3">
       <div className="mt-6">
         <div
-          className="flex flex-wrap lg:flex-nowrap gap-1 w-full"
+          className="flex flex-wrap w-full gap-1 lg:flex-nowrap"
           style={{ alignItems: "flex-start" }}
         >
           <Col
@@ -273,7 +273,7 @@ export default function Search() {
             sm={8}
             md={6}
             lg={4}
-            className="hidden px-2 lg:block bg-white mr-4 flex-shrink-0 rounded-lg shadow-md"
+            className="flex-shrink-0 hidden px-2 mr-4 bg-white rounded-lg shadow-md lg:block"
             style={{ position: "sticky", top: "20px" }}
           >
             <LeftProductList
@@ -296,17 +296,17 @@ export default function Search() {
           </Col>
 
           <Col
-            className="px-4 py-4 bg-white flex-grow rounded-lg shadow-md"
+            className="flex-grow px-4 py-4 bg-white rounded-lg shadow-md"
             xs={24}
             sm={24}
             md={24}
             lg={20}
             style={{ height: "fit-content" }}
           >
-            <div className="flex w-full items-center justify-between pb-4">
+            <div className="flex items-center justify-between w-full pb-4">
               <div className="flex items-center gap-3">
                 <Button
-                  className="flex items-center gap-2 lg:hidden bg-blue-600 text-white hover:bg-blue-700 text-xs py-1 px-2"
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-white bg-blue-600 lg:hidden hover:bg-blue-700"
                   onClick={() => setOpenFilter(true)}
                 >
                   <FaFilter /> Bộ lọc
@@ -331,7 +331,7 @@ export default function Search() {
             {/* Dòng thông báo kết quả tìm kiếm */}
             {keyword.trim() && (
               <div className="mb-4">
-                <Text className="text-gray-700 text-3xl flex justify-center">
+                <Text className="flex justify-center text-3xl text-gray-700">
                   Tìm thấy {sortedData.length} kết quả cho "
                   <strong>{keyword}</strong>"
                 </Text>
@@ -339,7 +339,7 @@ export default function Search() {
             )}
 
             {loading ? (
-              <div className="flex h-60 items-center justify-center">
+              <div className="flex items-center justify-center h-60">
                 <Loader />
               </div>
             ) : currentPageData.length > 0 ? (
@@ -353,11 +353,11 @@ export default function Search() {
                 <ListCard pros={{ data: currentPageData }} />
               </div>
             ) : (
-              <div className="flex h-60 flex-col items-center justify-center text-center">
-                <Title level={4} className="text-gray-600 text-sm">
+              <div className="flex flex-col items-center justify-center text-center h-60">
+                <Title level={4} className="text-sm text-gray-600">
                   Không tìm thấy sản phẩm nào
                 </Title>
-                <p className="text-gray-500 text-xs">
+                <p className="text-xs text-gray-500">
                   Vui lòng thử lại với từ khóa hoặc bộ lọc khác
                 </p>
               </div>
@@ -367,7 +367,7 @@ export default function Search() {
       </div>
 
       {sortedData.length > 0 && (
-        <div className="mt-6 flex justify-center">
+        <div className="flex justify-center mt-6">
           <Pagination
             current={currentPage}
             total={sortedData.length}
@@ -390,7 +390,7 @@ export default function Search() {
         width={250}
         styles={{ body: { padding: "0" } }}
       >
-        <div className="flex h-full flex-col bg-white">
+        <div className="flex flex-col h-full bg-white">
           <div className="flex-grow overflow-auto">
             <LeftProductList
               expandCategories={expandCategories}
@@ -410,10 +410,10 @@ export default function Search() {
               categories={categories}
             />
           </div>
-          <div className="mt-auto p-3 border-t">
+          <div className="p-3 mt-auto border-t">
             <Button
               type="primary"
-              className="w-full bg-blue-600 hover:bg-blue-700 rounded-md text-xs"
+              className="w-full text-xs bg-blue-600 rounded-md hover:bg-blue-700"
               onClick={() => setOpenFilter(false)}
               size="small"
             >

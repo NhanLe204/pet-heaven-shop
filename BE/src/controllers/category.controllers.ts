@@ -3,11 +3,13 @@ import { IUser } from '../interfaces/user.interface.js';
 import categoryModel from '../models/category.model.js';
 import { CategoryStatus } from '../enums/category.enum.js';
 import mongoose from 'mongoose';
+import productModel from '@/models/product.model.js';
 
 interface AuthenticatedRequest extends Request {
   user?: IUser;
 }
 
+// lấy hết
 export const getAllCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await categoryModel.find();
@@ -22,6 +24,7 @@ export const getAllCategory = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// lấy theo id
 export const getCategoryById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -41,6 +44,8 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
     }
   }
 };
+
+// thêm
 export const insertCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, description } = req.body;
@@ -78,7 +83,7 @@ export const insertCategory = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// vẫn để nó hoạt động ( những chuyển qua api khác)
+// sửa
 export const updateCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -132,6 +137,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// ẩn hiện category
 export const toggleCategory = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -178,6 +184,7 @@ export const toggleCategory = async (req: AuthenticatedRequest, res: Response) =
   }
 };
 
+// cate hoạt động
 export const getCategoriesActive = async (req: Request, res: Response) => {
   try {
     const result = await categoryModel.find({ status: CategoryStatus.ACTIVE });
@@ -187,25 +194,45 @@ export const getCategoriesActive = async (req: Request, res: Response) => {
   }
 };
 
-// Xóa category
+// Xóa 
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const category = await categoryModel.findById(id);
-    if (!category) {
-      res.status(404).json({ message: 'Không tìm thấy danh mục' });
+
+    // Kiểm tra ID hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, message: 'ID không hợp lệ' });
       return;
     }
 
-    await categoryModel.findByIdAndDelete(id);
-    res.status(200).json({ message: 'Xóa danh mục thành công' });
+    const category = await categoryModel.findById(id);
+    if (!category) {
+      res.status(404).json({ success: false, message: 'Không tìm thấy danh mục' });
+      return;
+    }
+
+    // Kiểm tra xem có sản phẩm nào đang dùng category này không
+    const productUsingCategory = await productModel.findOne({ category: id });
+    if (productUsingCategory) {
+      res.status(400).json({
+        success: false,
+        message: 'Không thể xóa vì vẫn còn sản phẩm thuộc danh mục này'
+      });
+      return;
+    }
+
+    // Xóa mềm: set is_active = false
+    category.is_active = false;
+    await category.save();
+
+    res.status(200).json({ success: true, message: 'Danh mục đã được ẩn thành công (soft delete)' });
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`Error category up: ${error.message}`);
-      return;
+      console.error(`Error delete category: ${error.message}`);
+      res.status(500).json({ success: false, message: 'Lỗi máy chủ', error: error.message });
     } else {
-      console.error('Error category up:', error);
-      return;
+      console.error('Unknown error delete category:', error);
+      res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
     }
   }
 };

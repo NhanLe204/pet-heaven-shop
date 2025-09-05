@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Checkbox, Typography } from "antd";
 import { FaChevronUp, FaChevronDown } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import tagApi from "../api/tagApi";
-import brandApi from "../api/brandApi";
+import tagApi from "../../api/tagApi";
+import brandApi from "../../api/brandApi";
 
 const { Title } = Typography;
 
@@ -276,18 +276,18 @@ export default function LeftProductList({
 
   return (
     <div className="p-2">
-      <div className="cursor-pointer mb-4">
+      <div className="mb-4 cursor-pointer">
         <div
           className="flex items-center justify-between mb-2"
           onClick={() => setExpandCategories(!expandCategories)}
         >
-          <Title level={5} className="mb-0 text-gray-800 font-semibold text-sm">
+          <Title level={5} className="mb-0 text-sm font-semibold text-gray-800">
             DANH MỤC SẢN PHẨM
           </Title>
           {expandCategories ? (
-            <FaChevronUp className="text-gray-600 text-xs" />
+            <FaChevronUp className="text-xs text-gray-600" />
           ) : (
-            <FaChevronDown className="text-gray-600 text-xs" />
+            <FaChevronDown className="text-xs text-gray-600" />
           )}
         </div>
         {expandCategories && (
@@ -318,13 +318,13 @@ export default function LeftProductList({
                 >
                   <span>{category.name.toUpperCase()}</span>
                   {expandedTagCategory === category._id ? (
-                    <FaChevronUp className="text-gray-600 text-xs" />
+                    <FaChevronUp className="text-xs text-gray-600" />
                   ) : (
-                    <FaChevronDown className="text-gray-600 text-xs" />
+                    <FaChevronDown className="text-xs text-gray-600" />
                   )}
                 </div>
                 {expandedTagCategory === category._id && (
-                  <ul className="ml-4 mt-1 space-y-1">
+                  <ul className="mt-1 ml-4 space-y-1">
                     {loadingTags ? (
                       <li className="text-xs text-gray-500">
                         Đang tải tags...
@@ -337,7 +337,7 @@ export default function LeftProductList({
                           <Checkbox
                             onChange={() => handleTagToggle(tag._id)}
                             checked={selectedTags.includes(tag._id)}
-                            className="text-gray-700 text-xs"
+                            className="text-xs text-gray-700"
                           >
                             {tag.tag_name}
                           </Checkbox>
@@ -354,18 +354,18 @@ export default function LeftProductList({
         )}
       </div>
 
-      <div className="cursor-pointer mb-4">
+      <div className="mb-4 cursor-pointer">
         <div
           className="flex items-center justify-between mb-2"
           onClick={() => setExpandPrice(!expandPrice)}
         >
-          <Title level={5} className="mb-0 text-gray-800 font-semibold text-sm">
+          <Title level={5} className="mb-0 text-sm font-semibold text-gray-800">
             GIÁ
           </Title>
           {expandPrice ? (
-            <FaChevronUp className="text-gray-600 text-xs" />
+            <FaChevronUp className="text-xs text-gray-600" />
           ) : (
-            <FaChevronDown className="text-gray-600 text-xs" />
+            <FaChevronDown className="text-xs text-gray-600" />
           )}
         </div>
         {expandPrice && (
@@ -381,7 +381,7 @@ export default function LeftProductList({
                 <Checkbox
                   onChange={() => handlePriceToggle(range.id)}
                   checked={priceRanges.includes(range.id)}
-                  className="text-gray-700 text-xs"
+                  className="text-xs text-gray-700"
                 >
                   {range.label}
                 </Checkbox>
@@ -392,18 +392,18 @@ export default function LeftProductList({
         )}
       </div>
 
-      <div className="cursor-pointer mb-4">
+      <div className="mb-4 cursor-pointer">
         <div
           className="flex items-center justify-between mb-2"
           onClick={() => setExpandBrand(!expandBrand)}
         >
-          <Title level={5} className="mb-0 text-gray-800 font-semibold text-sm">
+          <Title level={5} className="mb-0 text-sm font-semibold text-gray-800">
             BRAND
           </Title>
           {expandBrand ? (
-            <FaChevronUp className="text-gray-600 text-xs" />
+            <FaChevronUp className="text-xs text-gray-600" />
           ) : (
-            <FaChevronDown className="text-gray-600 text-xs" />
+            <FaChevronDown className="text-xs text-gray-600" />
           )}
         </div>
         {expandBrand && (
@@ -418,7 +418,7 @@ export default function LeftProductList({
                   <Checkbox
                     onChange={() => handleBrandToggle(brand._id)}
                     checked={selectedBrands.includes(brand._id)}
-                    className="text-gray-700 text-xs"
+                    className="text-xs text-gray-700"
                   >
                     {brand.brand_name || brand.name}
                   </Checkbox>

@@ -1,12 +1,13 @@
+"use client";
 import React, { useEffect, useState } from "react";
-import { FaFilter } from "react-icons/fa";
-import { Button, Row, Col, Typography, Select, Drawer, Pagination } from "antd";
-import ListCard from "../../components/listcard";
+import { Button, Row, Col, Typography, Select, Pagination } from "antd";
+import ListCard from "../../components/products/listcard";
 import Loader from "../../components/loader";
-import LeftProductList from "../../components/LeftProductList";
 import productsApi from "../../api/productsApi";
 import categoryApi from "../../api/categoryApi";
 import CustomPagination from "../../components/customPanigation/customPanigation";
+import FilterPopup from "../../components/products/FilterPopup";
+import { CiFilter } from "react-icons/ci";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -41,17 +42,11 @@ interface Category {
 export default function Products() {
   const [data, setData] = useState<APIProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<"newest" | "asc" | "desc">("asc");
-  const [priceRanges, setPriceRanges] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sort, setSort] = useState<string>("newest");
   const [currentPage, setCurrentPage] = useState(1);
-  const [openFilter, setOpenFilter] = useState(false);
-  const [expandCategories, setExpandCategories] = useState(true);
-  const [expandPrice, setExpandPrice] = useState(true);
-  const [expandBrand, setExpandBrand] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [openFilter, setOpenFilter] = useState(false);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 150000000]);
 
   const itemsPerPage = 12;
 
@@ -61,13 +56,11 @@ export default function Products() {
         setLoading(true);
 
         const categoryResponse = await categoryApi.getCategoriesActive();
-        console.log(categoryResponse);
-
         const categoryData = categoryResponse.data;
         if (categoryData.result && Array.isArray(categoryData.result)) {
           setCategories(categoryData.result);
-        } else {
         }
+
         const productResponse = await productsApi.getProductActive();
         const productData = productResponse.data;
         if (productData.result && Array.isArray(productData.result)) {
@@ -84,276 +77,178 @@ export default function Products() {
     fetchData();
   }, []);
 
-  const togglePriceRange = (value: string) => {
-    setPriceRanges((prev) =>
-      prev.includes(value)
-        ? prev.filter((range) => range !== value)
-        : [...prev, value]
-    );
-  };
-
-  const toggleBrand = (brandId: string) => {
-    setSelectedBrands((prev) =>
-      prev.includes(brandId)
-        ? prev.filter((id) => id !== brandId)
-        : [...prev, brandId]
-    );
-  };
-
-  const toggleTag = (tagId: string) => {
-    setSelectedTags((prev) => {
-      const updatedTags = prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId)
-        : [...prev, tagId];
-      console.log("Tag được chọn:", updatedTags);
-      return updatedTags;
-    });
-  };
-
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    if (categoryId === "all") {
-      setSelectedTags([]);
-    } else {
-      setSelectedTags([]);
-    }
-  };
-
-  const getPriceRangeFilter = (price: number) => {
-    if (priceRanges.length === 0) return true;
-    return priceRanges.some((range) => {
-      switch (range) {
-        case "under150":
-          return price < 150000;
-        case "150to300":
-          return price >= 150000 && price <= 300000;
-        case "300to500":
-          return price > 300000 && price <= 500000;
-        case "500to700":
-          return price > 500000 && price <= 700000;
-        case "above700":
-          return price > 700000;
-        default:
-          return false;
-      }
-    });
-  };
-
-  const filteredData = data.filter((item) => {
-    const originalPrice = Number(item.price);
-    const discountedPrice = originalPrice * (1 - (item.discount || 0) / 100);
-    const matchPrice = getPriceRangeFilter(discountedPrice);
-
-    const brandId =
-      typeof item.brand_id === "string"
-        ? item.brand_id
-        : item.brand_id && typeof item.brand_id === "object"
-          ? (item.brand_id as { _id: string })._id
-          : null;
-    const matchBrand =
-      selectedBrands.length === 0 ||
-      (brandId && selectedBrands.includes(brandId));
-
-    const categoryId =
-      typeof item.category_id === "string"
-        ? item.category_id
-        : item.category_id && typeof item.category_id === "object"
-          ? (item.category_id as { _id: string })._id
-          : null;
-    const matchCategory =
-      selectedCategory === "all" ||
-      (categoryId && categoryId === selectedCategory);
-
-    let matchTags = true;
-    if (selectedCategory !== "all" && selectedTags.length > 0) {
-      let itemTags: string[] = [];
-      if (typeof item.tag_id === "string") {
-        itemTags = [item.tag_id];
-      } else if (
-        item.tag_id &&
-        typeof item.tag_id === "object" &&
-        "_id" in item.tag_id
-      ) {
-        itemTags = [(item.tag_id as { _id: string })._id];
-      } else if (Array.isArray(item.tag_id)) {
-        itemTags = item.tag_id.map((tag) =>
-          typeof tag === "string" ? tag : (tag as { _id: string })._id
-        );
-      }
-      matchTags =
-        itemTags.length > 0 &&
-        itemTags.some((tag) => selectedTags.includes(tag));
-    }
-
-    return matchPrice && matchBrand && matchCategory && matchTags;
-  });
-
-  const sortedData = [...filteredData].sort((a, b) => {
+  const sortedData = [...data].sort((a, b) => {
     const priceA = Number(a.price) * (1 - (a.discount || 0) / 100);
     const priceB = Number(b.price) * (1 - (b.discount || 0) / 100);
-    if (sort === "newest") {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else if (sort === "asc") {
-      return priceA - priceB;
-    } else {
-      return priceB - priceA;
+    const brandA = (typeof a.brand_id === "string" ? a.brand_id : a.brand_id?._id) || "";
+    const brandB = (typeof b.brand_id === "string" ? b.brand_id : b.brand_id?._id) || "";
+
+    switch (sort) {
+      case "newest":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "asc":
+        return priceA - priceB;
+      case "desc":
+        return priceB - priceA;
+      case "highlight":
+        return 0; // Logic tùy chỉnh cho "Nổi bật" (cần dữ liệu từ API)
+      case "bestselling":
+        return 0; // Logic tùy chỉnh cho "Bán chạy" (cần dữ liệu từ API)
+      case "discount":
+        return (b.discount || 0) - (a.discount || 0);
+      case "ASUS":
+        return brandA === "ASUS" ? -1 : brandB === "ASUS" ? 1 : 0;
+      case "HP":
+        return brandA === "HP" ? -1 : brandB === "HP" ? 1 : 0;
+      case "DELL":
+        return brandA === "DELL" ? -1 : brandB === "DELL" ? 1 : 0;
+      case "MacBook":
+        return brandA === "MacBook" ? -1 : brandB === "MacBook" ? 1 : 0;
+      case "Lenovo":
+        return brandA === "Lenovo" ? -1 : brandB === "Lenovo" ? 1 : 0;
+      case "Acer":
+        return brandA === "Acer" ? -1 : brandB === "Acer" ? 1 : 0;
+      case "MSI":
+        return brandA === "MSI" ? -1 : brandB === "MSI" ? 1 : 0;
+      case "GIGABYTE":
+        return brandA === "GIGABYTE" ? -1 : brandB === "GIGABYTE" ? 1 : 0;
+      case "LaptopAI":
+        return brandA === "LaptopAI" ? -1 : brandB === "LaptopAI" ? 1 : 0;
+      case "LaptopGaming":
+        return brandA === "LaptopGaming" ? -1 : brandB === "LaptopGaming" ? 1 : 0;
+      case "Samsung":
+        return brandA === "Samsung" ? -1 : brandB === "Samsung" ? 1 : 0;
+      default:
+        return 0;
     }
+  });
+
+  const filteredData = sortedData.filter((item) => {
+    const price = Number(item.price) * (1 - (item.discount || 0) / 100);
+    return price >= priceRange[0] && price <= priceRange[1];
   });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [priceRanges, selectedBrands, selectedTags, sort, selectedCategory]);
+  }, [sort, priceRange]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentPageData = sortedData.slice(startIndex, endIndex);
+  const currentPageData = filteredData.slice(startIndex, endIndex);
 
   return (
     <div className="mx-auto mb-4 mt-4 w-full max-w-full sm:px-3 md:px-7 lg:px-14 xl:px-[154px] bg-[#e8e8e8]/[0.5] py-3">
       <div className="mt-6">
-        <div
-          className="flex flex-wrap w-full gap-1 lg:flex-nowrap"
-          style={{ alignItems: "flex-start" }}
+        <Col
+          className="flex-grow px-2 py-4 bg-white rounded-lg shadow-md lg:px-4"
+          xs={24}
+          sm={24}
+          md={24}
+          lg={24}
+          style={{ height: "fit-content" }}
         >
-          <Col
-            xs={24}
-            sm={8}
-            md={6}
-            lg={4}
-            className="flex-shrink-0 hidden px-2 mr-4 bg-white rounded-lg shadow-md lg:block"
-            style={{ position: "sticky", top: "20px" }}
-          >
-            <LeftProductList
-              expandCategories={expandCategories}
-              setExpandCategories={setExpandCategories}
-              expandPrice={expandPrice}
-              setExpandPrice={setExpandPrice}
-              expandBrand={expandBrand}
-              setExpandBrand={setExpandBrand}
-              priceRanges={priceRanges}
-              togglePriceRange={togglePriceRange}
-              selectedBrands={selectedBrands}
-              toggleBrand={toggleBrand}
-              selectedTags={selectedTags}
-              toggleTag={toggleTag}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={handleCategoryChange}
-              categories={categories}
-            />
-          </Col>
-
-          <Col
-            className="flex-grow px-2 py-4 bg-white rounded-lg shadow-md lg:px-4"
-            xs={24}
-            sm={24}
-            md={24}
-            lg={20}
-            style={{ height: "fit-content" }}
-          >
-            <div className="flex items-center justify-between w-full pb-4">
-              <div className="flex items-center gap-3">
-                <Button
-                  className="flex items-center gap-2 px-2 py-1 text-xs text-white bg-blue-600 lg:hidden hover:bg-blue-700"
-                  onClick={() => setOpenFilter(true)}
-                >
-                  <FaFilter /> Bộ lọc
-                </Button>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-700">Sắp xếp theo:</span>
-                <Select
-                  className="w-full min-w-[120px] sm:w-auto"
-                  value={sort}
-                  onChange={(value) => setSort(value)}
-                  dropdownStyle={{ borderRadius: "8px" }}
-                  size="small"
-                >
-                  <Option value="newest">Mới nhất</Option>
-                  <Option value="asc">Giá tăng dần</Option>
-                  <Option value="desc">Giá giảm dần</Option>
-                </Select>
-              </div>
+          <div className="flex flex-col w-full pb-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={() => setOpenFilter(true)}>
+                <CiFilter />
+                <p>Lọc</p>
+              </Button>
+              <Button className="text-xs" onClick={() => setSort("ASUS")}>ASUS</Button>
+              <Button className="text-xs" onClick={() => setSort("HP")}>HP</Button>
+              <Button className="text-xs" onClick={() => setSort("DELL")}>DELL</Button>
+              <Button className="text-xs" onClick={() => setSort("MacBook")}>MacBook</Button>
+              <Button className="text-xs" onClick={() => setSort("Lenovo")}>Lenovo</Button>
+              <Button className="text-xs" onClick={() => setSort("Acer")}>Acer</Button>
+              <Button className="text-xs" onClick={() => setSort("MSI")}>MSI</Button>
+              <Button className="text-xs" onClick={() => setSort("GIGABYTE")}>GIGABYTE</Button>
+              <Button className="text-xs" onClick={() => setSort("LaptopAI")}>Laptop AI</Button>
+              <Button className="text-xs" onClick={() => setSort("LaptopGaming")}>Laptop Gaming</Button>
+              <Button className="text-xs" onClick={() => setSort("Samsung")}>Samsung</Button>
             </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center h-60">
-                <Loader />
-              </div>
-            ) : currentPageData.length > 0 ? (
-              <div
-                className="gap-0 xs:gap-3"
-                style={{
-                  height: "auto",
-                  minHeight: currentPageData.length > 0 ? "auto" : "60vh",
-                }}
+            {/* Phần sắp xếp */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-700">Sắp xếp theo:</span>
+              <Button
+                className={`text-xs ${sort === "highlight" ? "text-blue-600" : "text-gray-700"}`}
+                onClick={() => setSort("highlight")}
               >
-                <ListCard pros={{ data: currentPageData }} />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center h-60">
-                <Title level={4} className="text-sm text-gray-600">
-                  Không tìm thấy sản phẩm nào
-                </Title>
-                <p className="text-xs text-gray-500">
-                  Vui lòng thử lại với bộ lọc khác
-                </p>
-              </div>
-            )}
-          </Col>
-        </div>
+                Nổi bật
+              </Button>
+              <Button
+                className={`text-xs ${sort === "bestselling" ? "text-blue-600" : "text-gray-700"}`}
+                onClick={() => setSort("bestselling")}
+              >
+                Bán chạy
+              </Button>
+              <Button
+                className={`text-xs ${sort === "discount" ? "text-blue-600" : "text-gray-700"}`}
+                onClick={() => setSort("discount")}
+              >
+                Giảm giá
+              </Button>
+              <Button
+                className={`text-xs ${sort === "newest" ? "text-blue-600" : "text-gray-700"}`}
+                onClick={() => setSort("newest")}
+              >
+                Mới
+              </Button>
+              <Select
+                className="w-full min-w-[100px] sm:w-auto"
+                value={sort === "asc" || sort === "desc" ? sort : "price"}
+                onChange={(value) => setSort(value)}
+                dropdownStyle={{ borderRadius: "8px" }}
+                size="small"
+              >
+                <Option value="asc">Thấp - Cao</Option>
+                <Option value="desc">Cao - Thấp</Option>
+              </Select>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-60">
+              <Loader />
+            </div>
+          ) : currentPageData.length > 0 ? (
+            <div
+              className="grid gap-4 xs:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+              style={{
+                height: "auto",
+                minHeight: currentPageData.length > 0 ? "auto" : "60vh",
+              }}
+            >
+              {currentPageData.map((product, index) => (
+                <ListCard key={`${product._id}-${index}`} pros={{ data: [product] }} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center h-60">
+              <Title level={4} className="text-sm text-gray-600">
+                Không tìm thấy sản phẩm nào
+              </Title>
+              <p className="text-xs text-gray-500">
+                Vui lòng thử lại với bộ lọc khác
+              </p>
+            </div>
+          )}
+        </Col>
       </div>
 
-      {sortedData.length > 0 && (
+      {filteredData.length > 0 && (
         <CustomPagination
           currentPage={currentPage}
-          totalItems={sortedData.length}
+          totalItems={filteredData.length}
           itemsPerPage={itemsPerPage}
           onPageChange={(page) => setCurrentPage(page)}
         />
       )}
 
-      <Drawer
-        placement="left"
-        onClose={() => setOpenFilter(false)}
+      <FilterPopup
         open={openFilter}
-        title={
-          <span className="text-sm font-semibold text-gray-800">Bộ lọc</span>
-        }
-        width={250}
-        styles={{ body: { padding: "0" } }}
-      >
-        <div className="flex flex-col h-full bg-white">
-          <div className="flex-grow overflow-auto">
-            <LeftProductList
-              expandCategories={expandCategories}
-              setExpandCategories={setExpandCategories}
-              expandPrice={expandPrice}
-              setExpandPrice={setExpandPrice}
-              expandBrand={expandBrand}
-              setExpandBrand={setExpandBrand}
-              priceRanges={priceRanges}
-              togglePriceRange={togglePriceRange}
-              selectedBrands={selectedBrands}
-              toggleBrand={toggleBrand}
-              selectedTags={selectedTags}
-              toggleTag={toggleTag}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={handleCategoryChange}
-              categories={categories}
-            />
-          </div>
-          <div className="p-3 mt-auto border-t">
-            <Button
-              type="primary"
-              className="w-full text-xs bg-blue-600 rounded-md hover:bg-blue-700"
-              onClick={() => setOpenFilter(false)}
-              size="small"
-            >
-              Áp dụng
-            </Button>
-          </div>
-        </div>
-      </Drawer>
+        onClose={() => setOpenFilter(false)}
+        onApply={(filters) => setPriceRange(filters.priceRange)}
+      />
     </div>
   );
 }

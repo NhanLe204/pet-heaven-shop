@@ -31,10 +31,10 @@ const Dashboard = () => {
   const [currentPageOrders, setCurrentPageOrders] = useState(1);
   const [newCustomers, setNewCustomers] = useState<Customer[]>([]);
   const [outOfStockProducts, setOutOfStockProducts] = useState([]);
-  const [hotProducts, setHotProducts] = useState([]);
+  // const [hotProducts, setHotProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPageHotProducts, setCurrentPageHotProducts] = useState(1);
+  // const [currentPageHotProducts, setCurrentPageHotProducts] = useState(1);
 
   interface Customer {
     avatar?: string;
@@ -146,23 +146,23 @@ const Dashboard = () => {
         );
         setOutOfStockProducts(formattedOutOfStockItems);
 
-        const hotProductsResponse = await productsApi.getHotproducts();
-        const hotProductsItems = hotProductsResponse.data.result || [];
-        const formattedHotProducts = hotProductsItems.map((product: any) => ({
-          key: product._id,
-          _id: product._id,
-          shortId: product._id ? `**${product._id.slice(-4)}` : "N/A",
-          name: product.name,
-          image: product.image_url?.[0] || "https://via.placeholder.com/64",
-          images: product.image_url || [],
-          quantity: product.quantity || 0,
-          price: product.price,
-          quantity_sold: product.quantity_sold || 0,
-          category: product.category_id?.name || "Không xác định",
-          brand: product.brand_id?.brand_name || "Không có thương hiệu",
-          tag: product.tag_id?.tag_name || "Không có thẻ",
-        }));
-        setHotProducts(formattedHotProducts);
+        // const hotProductsResponse = await productsApi.getHotproducts();
+        // const hotProductsItems = hotProductsResponse.data.result || [];
+        // const formattedHotProducts = hotProductsItems.map((product: any) => ({
+        //   key: product._id,
+        //   _id: product._id,
+        //   shortId: product._id ? `**${product._id.slice(-4)}` : "N/A",
+        //   name: product.name,
+        //   image: product.image_url?.[0] || "https://via.placeholder.com/64",
+        //   images: product.image_url || [],
+        //   quantity: product.quantity || 0,
+        //   price: product.price,
+        //   quantity_sold: product.quantity_sold || 0,
+        //   category: product.category_id?.name || "Không xác định",
+        //   brand: product.brand_id?.brand_name || "Không có thương hiệu",
+        //   tag: product.tag_id?.tag_name || "Không có thẻ",
+        // }));
+        // setHotProducts(formattedHotProducts);
 
         const allBookingsResponse = await orderDetailApi.getAllBookings();
         const allBookings = allBookingsResponse.data || [];
@@ -284,7 +284,7 @@ const Dashboard = () => {
               "https://img.lovepik.com/png/20231127/young-businessman-3d-cartoon-avatar-portrait-character-digital_708913_wh860.png"
             }
             alt="avatar"
-            className="rounded-full w-8 h-8"
+            className="w-8 h-8 rounded-full"
           />
           <Text>{record.fullname || record.name || "Không xác định"}</Text>
         </div>
@@ -414,18 +414,7 @@ const Dashboard = () => {
           bordered={false}
           className="mb-6 shadow-sm"
         >
-          <Table
-            columns={productColumns}
-            dataSource={hotProducts}
-            pagination={{
-              current: currentPageHotProducts,
-              pageSize: 4,
-              onChange: (page) => setCurrentPageHotProducts(page),
-              total: hotProducts.length,
-            }}
-            className="overflow-x-auto"
-            loading={loading}
-          />
+          
         </Card>
       </div>
     </motion.div>

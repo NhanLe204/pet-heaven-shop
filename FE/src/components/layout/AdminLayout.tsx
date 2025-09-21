@@ -122,6 +122,12 @@ const AdminLayout = () => {
       path: "/admin/categories",
     },
     {
+      key: "3-1",  
+      icon: <AppstoreOutlined />,
+      label: "Quản lý danh mục con",
+      path: "/admin/subcategories",
+    },
+    {
       key: "4",
       icon: <ShoppingOutlined />,
       label: "Quản lý sản phẩm",
@@ -181,12 +187,6 @@ const AdminLayout = () => {
       label: "Quản lý mã giảm giá",
       path: "/admin/coupon",
     },
-    // {
-    //   key: "13",
-    //   icon: <SettingOutlined />,
-    //   label: "Cài đặt hệ thống",
-    //   path: "/admin/settings",
-    // },
   ];
 
   // Danh sách menu cho employee (loại bỏ các menu nhạy cảm)
@@ -228,8 +228,9 @@ const AdminLayout = () => {
         collapsed={collapsed}
         className="fixed top-0 left-0 z-10 h-screen bg-white shadow-md"
         style={{
-          overflow: "auto", // Allow scrolling within the sidebar if content overflows
+          overflow: "auto", 
         }}
+        width={300}
       >
         <div className="flex items-center p-4 space-x-2">
           <Avatar
@@ -264,7 +265,7 @@ const AdminLayout = () => {
 
       <Layout
         style={{
-          marginLeft: collapsed ? 80 : 200, // Adjust margin based on collapsed state
+          marginLeft: collapsed ? 80 : 300, // Adjust margin based on collapsed state
           transition: "margin-left 0.2s", // Smooth transition when collapsing/expanding
         }}
       >

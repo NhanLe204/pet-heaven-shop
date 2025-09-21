@@ -16,10 +16,13 @@ import {
   DeleteOutlined,
   EditOutlined,
   SearchOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { Typography } from 'antd';
 import categoryApi from '../../api/categoryApi';
+import AddCategoryModal from '../components/category/addModal';
+import EditCategoryModal from '../components/category/editModal';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -30,9 +33,9 @@ interface Category {
   name: string;
   description: string;
   status: string;
+  image_url: string[];
 }
 
-// Function to remove Vietnamese accents
 const removeAccents = (str: string) => {
   return str
     .normalize('NFD')
@@ -51,6 +54,49 @@ const CategoryList: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
 
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const response = await categoryApi.getParents();
+      const data = response.data || response;
+
+      if (!data?.success) {
+        throw new Error(data?.message || 'Lỗi khi lấy danh sách category');
+      }
+
+      const categoryData: Category[] = data.result.map((category: any) => ({
+        key: category._id,
+        _id: category._id,
+        name: category.name || '',
+        description: category.description || '',
+        image_url: Array.isArray(category.image_url)
+          ? category.image_url
+          : category.image_url
+            ? [category.image_url]
+            : [],
+        status: category.status === "active" ? "active" : "inactive",
+      }));
+
+      setCategories(categoryData);
+      setFilteredCategories(categoryData);
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+      notification.error({
+        message: 'Lỗi',
+        description: error.message || 'Không thể lấy danh sách category!',
+        placement: 'topRight',
+        duration: 2,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     const fetchCategories = async () => {
       setLoading(true);
@@ -60,14 +106,26 @@ const CategoryList: React.FC = () => {
           console.error("No token found in localStorage");
           return;
         }
-        const response = await categoryApi.getAll();
-        const fetchedCategories = response.data.result.map((category: any) => ({
+
+        const response = await categoryApi.getParents();
+        const data = response.data || response;
+        if (!data?.result) {
+          throw new Error("API không trả về result");
+        }
+
+        const fetchedCategories = data.result.map((category: any) => ({
           key: category._id,
           _id: category._id,
           name: category.name,
           description: category.description,
-          status: category.status === "active" ? "Hoạt động" : "Bị khóa",
+          status: category.status || "active",
+          image_url: Array.isArray(category.image_url)
+            ? category.image_url
+            : category.image_url
+              ? [category.image_url]
+              : [],
         }));
+
         setCategories(fetchedCategories);
         setFilteredCategories(fetchedCategories);
       } catch (error) {
@@ -76,10 +134,11 @@ const CategoryList: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
-  // Enhanced search functionality
+
   const handleSearch = (value: string) => {
     setSearchText(value);
     const normalizedSearchText = removeAccents(value.toLowerCase());
@@ -92,6 +151,41 @@ const CategoryList: React.FC = () => {
     setFilteredCategories(filtered);
   };
 
+  const handleToggleStatus = async (record: Category) => {
+    try {
+      const newStatus = record.status === "active" ? "inactive" : "active";
+
+      const response = await categoryApi.updateStatus(record._id, newStatus);
+      if (!response.success) throw new Error(response.message);
+
+      const updatedCategories = categories.map(c =>
+        c._id === record._id ? { ...c, status: newStatus } : c
+      );
+
+      setCategories(updatedCategories);
+      setFilteredCategories(updatedCategories);
+
+      notification.success({
+        message: "Thành công",
+        description: `Danh mục đã chuyển sang trạng thái ${newStatus === "active" ? "Hoạt động" : "Dừng hoạt động"
+          }`,
+        placement: "topRight",
+        duration: 2,
+      });
+    } catch (error: any) {
+      console.error(error);
+      notification.error({
+        message: "Lỗi",
+        description: error.response?.data?.message || error.message || "Không thể cập nhật trạng thái danh mục!",
+        placement: "topRight",
+        duration: 2,
+      });
+    }
+  };
+
+
+
+
   const columns = [
     {
       title: 'STT',
@@ -99,154 +193,70 @@ const CategoryList: React.FC = () => {
       width: 60,
       render: (_: any, __: Category, index: number) => index + 1,
     },
-    { title: 'Tên danh mục', dataIndex: 'name', key: 'name', width: 150 },
+    { title: 'Tên danh mục', dataIndex: 'name', key: 'name', width: 350 },
+    {
+      title: 'Ảnh',
+      dataIndex: 'image_url',
+      key: 'image',
+      width: 250,
+      render: (images: string[]) =>
+        images && images.length ? (
+          <img
+            src={images[0]}
+            alt="thumb"
+            style={{ width: 80, height: 56, objectFit: 'cover', borderRadius: 6 }}
+          />
+        ) : (
+          <div style={{
+            width: 80,
+            height: 56,
+            background: '#f3f4f6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 6,
+            color: '#9ca3af',
+            fontSize: 12,
+          }}>
+            No image
+          </div>
+        ),
+    },
     { title: 'Mô tả', dataIndex: 'description', key: 'description' },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
-        <Tag color={status === "Hoạt động" ? "success" : "error"}>{status}</Tag>
+        <Tag color={status === "active" ? "success" : "error"}>
+          {status === "active" ? "Hoạt động" : "Dừng hoạt động"}
+        </Tag>
       ),
     },
     {
-      title: "Tính năng",
-      key: "action",
-      width: 120,
+      title: "Hành động", key: "actions", width: 220,
       render: (_: any, record: Category) => (
         <Space>
           <Button
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
             size="small"
-          />
+            onClick={() => { setSelectedCategory(record); setIsEditModalVisible(true); }}
+          >
+            Sửa
+          </Button>
           <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
+            icon={<SyncOutlined />}
             size="small"
-          />
+            onClick={() => handleToggleStatus(record)}
+          >
+            {record.status === "active" ? "Dừng" : "Hoạt động"}
+          </Button>
         </Space>
       ),
     },
+
   ];
 
-  const handleEdit = (record: Category) => {
-    setSelectedCategory(record);
-    setIsEditModalVisible(true);
-    form.setFieldsValue({
-      name: record.name,
-      description: record.description,
-      status: record.status,
-    });
-  };
-
-  const handleDelete = (record: Category) => {
-    Modal.confirm({
-      title: 'Xác nhận',
-      content: `Bạn có chắc chắn muốn xóa danh mục "${record.name}"?`,
-      okText: 'Đồng ý',
-      cancelText: 'Hủy bỏ',
-      onOk: async () => {
-        try {
-          await categoryApi.delete(record._id);
-          const updatedCategories = categories.filter(category => category._id !== record._id);
-          setCategories(updatedCategories);
-          setFilteredCategories(updatedCategories);
-          notification.success({
-            message: "Thành công",
-            description: "Danh mục đã được xóa thành công!",
-            placement: "topRight",
-          });
-        } catch (error: any) {
-          console.error("Error deleting category:", error);
-          const errorMessage = error.response?.data?.message || "Không thể xóa danh mục!";
-          notification.error({
-            message: "Lỗi",
-            description: errorMessage,
-            placement: "topRight",
-          });
-        }
-      },
-    });
-  };
-
-  const handleEditModalOk = async () => {
-    try {
-      const values = await form.validateFields();
-      const token = localStorage.getItem("accessToken");
-      const updatedData = {
-        name: values.name,
-        description: values.description,
-        status: values.status === "Hoạt động" ? "active" : "inactive",
-      };
-      const response = await categoryApi.update(selectedCategory?._id, updatedData);
-      const updatedCategories = categories.map((u) =>
-        u.key === selectedCategory?.key
-          ? { ...u, ...updatedData, status: values.status }
-          : u
-      );
-      setCategories(updatedCategories);
-      setFilteredCategories(updatedCategories);
-      setIsEditModalVisible(false);
-      notification.success({
-        message: "Thành công",
-        description: "Thông tin danh mục đã được cập nhật thành công!",
-        placement: "topRight",
-      });
-    } catch (error) {
-      console.error("Error updating category:", error);
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi khi cập nhật thông tin danh mục!",
-        placement: "topRight",
-      });
-    }
-  };
-
-  const handleAddModalOk = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!localStorage.getItem("accessToken")) {
-        throw new Error("Bạn cần đăng nhập để thực hiện thao tác này!");
-      }
-      const newCategory = {
-        name: values.name,
-        description: values.description || "",
-        status: "active",
-      };
-      const response = await categoryApi.create(newCategory);
-      if (!response.success) {
-        throw new Error(response.message || "Tạo danh mục thất bại!");
-      }
-      const addedCategoryData = response.user || response.data;
-      const addedCategory = {
-        key: addedCategoryData._id,
-        _id: addedCategoryData._id,
-        name: values.name,
-        description: values.description,
-        status: "Hoạt động",
-      };
-      const updatedCategories = [...categories, addedCategory];
-      setCategories(updatedCategories);
-      setFilteredCategories(updatedCategories);
-      setIsAddModalVisible(false);
-      form.resetFields();
-      notification.success({
-        message: "Thành công",
-        description: "Danh mục đã được tạo thành công!",
-        placement: "topRight",
-      });
-    } catch (error: any) {
-      console.error("Error adding category:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Có lỗi khi tạo danh mục!";
-      notification.error({
-        message: "Lỗi",
-        description: errorMessage,
-        placement: "topRight",
-      });
-    }
-  };
 
   return (
     <motion.div
@@ -275,7 +285,7 @@ const CategoryList: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={() => setIsAddModalVisible(true)}
             >
-              Tạo mới danh mục
+              Thêm
             </Button>
           </div>
         }
@@ -289,74 +299,21 @@ const CategoryList: React.FC = () => {
         />
       </Card>
 
-      {/* Edit Modal */}
-      <Modal
-        title="Chỉnh sửa thông tin danh mục"
-        visible={isEditModalVisible}
-        onOk={handleEditModalOk}
-        onCancel={() => setIsEditModalVisible(false)}
-        okText="Lưu lại"
-        cancelText="Hủy bỏ"
-      >
-        {selectedCategory && (
-          <Form form={form} layout="vertical">
-            <Form.Item label="ID danh mục" name="_id">
-              <Input value={selectedCategory._id} disabled />
-            </Form.Item>
-            <Form.Item
-              label="Tên danh mục"
-              name="name"
-              rules={[{ required: true, message: "Vui lòng nhập tên danh mục!" }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Mô tả danh mục"
-              name="description"
-              rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
-            >
-              <Input.TextArea rows={4} />
-            </Form.Item>
-            <Form.Item
-              label="Trạng thái"
-              name="status"
-              rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
-            >
-              <Select>
-                <Option value="Hoạt động">Hoạt động</Option>
-                <Option value="Bị khóa">Bị khóa</Option>
-              </Select>
-            </Form.Item>
-          </Form>
-        )}
-      </Modal>
+      {/* modal thêm */}
+      <AddCategoryModal
+        isOpen={isAddModalVisible}
+        onClose={() => setIsAddModalVisible(false)}
+        reloadCategories={fetchCategories}
+      />
 
-      {/* Add Modal */}
-      <Modal
-        title="Tạo mới danh mục"
-        visible={isAddModalVisible}
-        onOk={handleAddModalOk}
-        onCancel={() => setIsAddModalVisible(false)}
-        okText="Lưu lại"
-        cancelText="Hủy bỏ"
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="Tên danh mục"
-            name="name"
-            rules={[{ required: true, message: 'Vui lòng nhập tên danh mục!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Mô tả danh mục"
-            name="description"
-          >
-            <Input.TextArea rows={4} />
-          </Form.Item>
-        </Form>
-      </Modal>
+
+      <EditCategoryModal
+        isOpen={isEditModalVisible}
+        onClose={() => setIsEditModalVisible(false)}
+        reloadCategories={fetchCategories}
+        category={selectedCategory}
+      />
+
     </motion.div>
   );
 };

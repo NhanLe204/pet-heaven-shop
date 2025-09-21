@@ -18,6 +18,7 @@ import tagApi from "../../api/tagApi";
 import ProductModal from "../components/productModal";
 import { Image } from "antd";
 import { useLocation } from "react-router-dom";
+import AddProductModal from "../components/product/addPModal";
 
 const { Option } = Select;
 
@@ -82,7 +83,6 @@ const ProductList: React.FC = () => {
   const pageSize = 10;
 
   const showModal = (product?: Product) => {
-    console.log("Product passed to modal:", product);
     setEditingProduct(product || null);
     setIsModalVisible(true);
   };
@@ -408,12 +408,16 @@ const ProductList: React.FC = () => {
         />
       </Card>
 
-      <ProductModal
-        visible={isModalVisible}
+      <AddProductModal
+        isOpen={isModalVisible}
         onClose={closeModal}
-        onReload={fetchProducts}
+        onReload={fetchProducts}   
         product={editingProduct}
+        brands={brands}
+        tags={tags}
       />
+
+
     </motion.div>
   );
 };

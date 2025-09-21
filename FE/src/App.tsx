@@ -36,12 +36,13 @@ import SuccessPage from "./pages/orders/success";
 import BookingManager from "./admin/booking/booking";
 import SuccessBooking from "./pages/orders/booking/successBooking";
 import BlogCategoryList from "./admin/blog_category/blog_category";
-import ChatbotController from "./components/ChatbotController";
+
 import ArticleDetail from "./pages/blogDetail/blogDetail";
 import BlogList from "./admin/blog/blog";
 import Revenue from "./admin/revenue/revenue";
-import NotFound from "./pages/404/404"; // Import trang 404
+import NotFound from "./pages/404/404"; 
 import CouponList from "./admin/coupon/coupon";
+import SubCategoryList from "./admin/subcategory/subcategory";
 
 interface User {
   id: string;
@@ -62,6 +63,7 @@ const EMPLOYEE_ALLOWED_PAGES = [
   "/admin/brands",
   "/admin/tags",
   "/admin/Revenue",
+  "/admin/subcategories",
 ];
 
 const ProtectedRoute = ({
@@ -122,6 +124,7 @@ function App() {
         { path: "revenue", element: <Revenue /> },
         { path: "employees", element: <EmployeeList /> },
         { path: "categories", element: <CategoryList /> },
+        { path: "subcategories", element: <SubCategoryList parentId={""}/> },
         { path: "blogcategories", element: <BlogCategoryList /> },
         { path: "products", element: <ProductList /> },
         { path: "blogs", element: <BlogList /> },
@@ -131,7 +134,6 @@ function App() {
         { path: "bookings", element: <BookingManager /> },
         { path: "services", element: <ServiceList /> },
         { path: "users", element: <UserList /> },
-        // { path: "settings", element: <SystemSettings /> },
       ],
     },
     {
@@ -243,7 +245,7 @@ function App() {
           ),
         },
         {
-          path: "/userprofile/*", // Route con cho userprofile
+          path: "/userprofile/*", 
           element: (
             <ProtectedRoute>
               <UserProfile />
@@ -266,12 +268,12 @@ function App() {
             </PublicRoute>
           ),
         },
-        { path: "*", element: <NotFound /> }, // Route 404 cho các trang con
+        { path: "*", element: <NotFound /> }, 
       ],
     },
     {
-      path: "*", // Route mặc định cho các đường dẫn không tồn tại
-      element: <NotFound />, // Hiển thị trang 404
+      path: "*",
+      element: <NotFound />,
     },
   ]);
 

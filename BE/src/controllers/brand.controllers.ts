@@ -54,11 +54,8 @@ export const getBrandById = async (req: Request, res: Response): Promise<void> =
 export const insertBrand = async (req: Request, res: Response) => {
   try {
     const { brand_name } = req.body;
-    console.log("👉 req.body:", req.body);
-    console.log("👉 req.files:", req.files);
-    // ✅ Lấy file từ Cloudinary thông qua multer
     const uploadedFiles = (req.files as Express.Multer.File[]) || [];
-    const imageUrls = uploadedFiles.map((file) => (file as any).path); // Cloudinary trả về .path = URL
+    const imageUrls = uploadedFiles.map((file) => (file as any).path); 
 
     const brand = await brandModel.create({
       brand_name,

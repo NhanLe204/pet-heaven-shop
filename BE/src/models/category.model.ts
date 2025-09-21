@@ -5,17 +5,29 @@ import { CategoryStatus } from '../enums/category.enum.js';
 const categorySchema: Schema<ICategory> = new Schema<ICategory>({
   name: {
     type: String,
-    default: ''
+    required: true,
+    trim: true
   },
   description: {
     type: String,
     default: ''
   },
+  image_url: {
+    type: [String],
+    default: []
+  },
+  parent_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'category',
+    default: null
+  },
   status: {
     type: String,
-    enum: CategoryStatus,
+    enum: Object.values(CategoryStatus),
     default: CategoryStatus.ACTIVE
   }
+}, {
+  timestamps: true
 });
 
 const categoryModel = mongoose.models.category || model('category', categorySchema);

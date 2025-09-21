@@ -3,6 +3,7 @@ import brandApi from "../../../api/brandApi";
 import { IoMdClose } from "react-icons/io";
 import { FaUpload } from "react-icons/fa";
 import { notification } from "antd";
+import { validateMaxLength } from "../../utils/validateName";
 
 
 interface Brand {
@@ -47,6 +48,7 @@ export default function EditBrandModal({
 
   const saveBrand = async () => {
     try {
+      if (!validateMaxLength("Tên thương hiệu", brandName, 50)) return;
       if (!brandName.trim()) {
         alert("Vui lòng nhập tên thương hiệu!");
         return;
@@ -94,6 +96,7 @@ export default function EditBrandModal({
         <div className="mb-5">
           <input
             type="text"
+            maxLength={50}
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
             placeholder="Nhập tên thương hiệu..."

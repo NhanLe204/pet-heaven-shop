@@ -1010,69 +1010,68 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
   }
 };
 // Hàm mới: Tự động hủy các đặt lịch quá hạn
-export const cancelOverdueBookings = () => {
-  schedule.scheduleJob('*/1 * * * *', async () => {
-    try {
-      console.log('Checking for overdue bookings...');
-      const now = dayjs().tz('Asia/Ho_Chi_Minh');
+// export const cancelOverdueBookings = () => {
+//   schedule.scheduleJob('*/1 * * * *', async () => {
+//     try {
+//       const now = dayjs().tz('Asia/Ho_Chi_Minh');
 
-      // Find bookings with serviceId and booking_date
-      const overdueBookings = await orderDetailModel
-        .find({
-          serviceId: { $ne: null },
-          booking_date: { $ne: null }
-        })
-        .populate('orderId');
+//       // Find bookings with serviceId and booking_date
+//       const overdueBookings = await orderDetailModel
+//         .find({
+//           serviceId: { $ne: null },
+//           booking_date: { $ne: null }
+//         })
+//         .populate('orderId');
 
-      for (const booking of overdueBookings) {
-        const order = booking.orderId;
-        if (!order || !order.bookingStatus) {
-          console.warn(`Skipping booking with missing order or bookingStatus: ${booking._id}`);
-          continue;
-        }
+//       for (const booking of overdueBookings) {
+//         const order = booking.orderId;
+//         if (!order || !order.bookingStatus) {
+//           console.warn(`Skipping booking with missing order or bookingStatus: ${booking._id}`);
+//           continue;
+//         }
 
-        // Skip if already CANCELLED, IN_PROGRESS, or COMPLETED
-        if (
-          order.bookingStatus === BookingStatus.CANCELLED ||
-          order.bookingStatus === BookingStatus.IN_PROGRESS ||
-          order.bookingStatus === BookingStatus.COMPLETED
-        ) {
-          continue;
-        }
+//         // Skip if already CANCELLED, IN_PROGRESS, or COMPLETED
+//         if (
+//           order.bookingStatus === BookingStatus.CANCELLED ||
+//           order.bookingStatus === BookingStatus.IN_PROGRESS ||
+//           order.bookingStatus === BookingStatus.COMPLETED
+//         ) {
+//           continue;
+//         }
 
-        // Parse booking_date as the full date-time
-        const bookingDateTime = dayjs(booking.booking_date).tz('Asia/Ho_Chi_Minh');
+//         // Parse booking_date as the full date-time
+//         const bookingDateTime = dayjs(booking.booking_date).tz('Asia/Ho_Chi_Minh');
 
-        if (!bookingDateTime.isValid()) {
-          console.warn(`Invalid booking date for order ${order._id}: ${booking.booking_date}`);
-          continue;
-        }
+//         if (!bookingDateTime.isValid()) {
+//           console.warn(`Invalid booking date for order ${order._id}: ${booking.booking_date}`);
+//           continue;
+//         }
 
-        // Check if more than 15 minutes have passed since the booking time
-        const fifteenMinutesAfter = bookingDateTime.add(15, 'minute');
-        if (now.isAfter(fifteenMinutesAfter)) {
-          // Update order to CANCELLED
-          await orderModel.findByIdAndUpdate(
-            order._id,
-            {
-              $set: {
-                bookingStatus: BookingStatus.CANCELLED,
-                status: 'cancelled'
-              }
-            },
-            { new: true }
-          );
-          console.log(`Cancelled overdue booking: ${order._id}`);
-        }
-      }
-    } catch (error) {
-      console.error('Error in cancelOverdueBookings job:', error);
-    }
-  });
-};
+//         // Check if more than 15 minutes have passed since the booking time
+//         const fifteenMinutesAfter = bookingDateTime.add(15, 'minute');
+//         if (now.isAfter(fifteenMinutesAfter)) {
+//           // Update order to CANCELLED
+//           await orderModel.findByIdAndUpdate(
+//             order._id,
+//             {
+//               $set: {
+//                 bookingStatus: BookingStatus.CANCELLED,
+//                 status: 'cancelled'
+//               }
+//             },
+//             { new: true }
+//           );
+//           console.log(`Cancelled overdue booking: ${order._id}`);
+//         }
+//       }
+//     } catch (error) {
+//       console.error('Error in cancelOverdueBookings job:', error);
+//     }
+//   });
+// };
 
 // Khởi động công việc tự động hủy khi file được load
-cancelOverdueBookings();
+// cancelOverdueBookings();
 
 // tìm số lương lịch hủy
 export const getCancelledBookings = async (req: Request, res: Response): Promise<void> => {

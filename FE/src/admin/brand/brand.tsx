@@ -151,7 +151,7 @@ const BrandManager: React.FC = () => {
         className="shadow-sm"
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddModalVisible(true)}>
-            Thêm thương hiệu
+            Thêm 
           </Button>
         }
       >

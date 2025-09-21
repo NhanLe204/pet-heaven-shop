@@ -3,6 +3,7 @@ import brandApi from "../../../api/brandApi";
 import { IoMdClose } from "react-icons/io";
 import { FaUpload } from "react-icons/fa";
 import { notification } from "antd";
+import { validateMaxLength } from "../../utils/validateName";
 
 
 interface AddBrandModalProps {
@@ -31,6 +32,7 @@ export default function AddBrandModal({
 
   const createBrand = async () => {
     try {
+      if (!validateMaxLength("Tên thương hiệu", brandName, 50)) return;
       if (!brandName.trim()) {
         alert("Vui lòng nhập tên thương hiệu!");
         return;
